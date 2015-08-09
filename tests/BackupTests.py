@@ -26,6 +26,12 @@ class TestBackupMethods(unittest.TestCase):
         self.assertEqual(node['type'], 'directory')
         self.assertEqual(node['parent'], 'parent')
 
+    def test_Negative_createNode(self):
+        with self.assertRaises(ValueError):
+            node = bu.createNode('C:\\Fail', 'fail', 'fail')
+        with self.assertRaises(ValueError):
+            node = bu.createNode('C:\\Users','fail','fail')
+
     def test_Positive_crawl(self):
         args = {'moveArg':False, 'startYear':2000, 'endYear':2015, 'inputDirectory': 'data',
                 'outputDirectory':'C:\\Users\\Alex\\Desktop', 'overrideArg':False}

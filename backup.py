@@ -9,9 +9,15 @@ def is_valid_path(parser, arg):
        return arg
 
 def createNode(directory, nodeType, parent):
+    if os.path.exists(directory):
+        if nodeType != 'directory' and nodeType != 'file':
+            raise ValueError('Incorrect Node Type')
         pathName = os.path.split(directory)[1]
         node = {'name': pathName, 'children':[], 'path': directory, 'parent':parent, 'type':nodeType}
         return node
+    else:
+        raise ValueError('Invalid path')
+        
 
 class Main_Backup:
     def __init__(self, args):

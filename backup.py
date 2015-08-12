@@ -1,6 +1,7 @@
 import sys
 import argparse
 import os
+import shutil
 
 def is_valid_path(parser, arg):
     if not os.path.exists(arg):
@@ -21,18 +22,18 @@ def createNode(directory, nodeType, parent):
 
 class Main_Backup:
     def __init__(self, args):
+        oldRoot = os.path.abspath(args['inputDirectory'])
+        newRoot = os.path.abspath(args['outputDirectory'])
         os.chdir((os.path.abspath(args['inputDirectory'])))
         self.root = ""
         self.crawl(args['startYear'], args['endYear'])
+        self.rebuild(oldRoot, newRoot)
         
 
     def crawl(self, start, end):
-        print os.getcwd()
         parent = ""
-        print parent==""
         for root, dirs, files in os.walk(os.getcwd()):
             if parent == "":
-                print 'creating root node'
                 parent = createNode(root, 'directory', parent)
                 for d in dirs:
                     parent['children'].append(createNode(os.path.join(root,d),'directory',parent))
@@ -56,19 +57,27 @@ class Main_Backup:
                 for f in files:
                     parent['children'].append(createNode(os.path.join(root,f),'file',parent))
                 
-        print str(self.root)
 
-    
+    def rebuild(self, oldRoot, newRoot):
+        queue = [self.root]
+        while queue:
+            node = queue.pop()
+            for child in node['children']:
+                path = child['path'].replace(oldRoot, '')
+                path = newRoot + path
+                if child['type'] == 'directory' and not os.path.exists(path):
+                    os.mkdir(path)
+                else:
+                    shutil.copy2(child['path'], path)
+                queue.append(child)
 
     def noDirectories(self, parent):
         for child in parent['children']:
             if child['type'] == 'directory':
-                print "found Dir"
                 return True
         return False
 
     def hasChild(self, parent, path):
-        print str(parent)
         for child in parent['children']:
             if child['path'] == path:
                 return True

@@ -10,16 +10,22 @@ def is_valid_path(parser, arg):
     else:
        return arg
 
-def createNode(directory, nodeType, parent):
+def createNode(directory, nodeType, parent,filtered):
     if os.path.exists(directory):
         if nodeType != 'directory' and nodeType != 'file':
             raise ValueError('Incorrect Node Type')
         pathName = os.path.split(directory)[1]
-        node = {'name': pathName, 'children':[], 'path': directory, 'parent':parent, 'type':nodeType}
+        node = {'name': pathName, 'children':[], 'path': directory, 'parent':parent, 'type':nodeType, 'filtered':filtered}
         return node
     else:
         raise ValueError('Invalid path')
         
+def tryInt(string):
+    try:
+        return int(string)
+    except ValueError:
+        return -1
+
 
 class Main_Backup:
     def __init__(self, args):
@@ -29,7 +35,7 @@ class Main_Backup:
         #os.chdir((os.path.abspath(args['inputDirectory'])))
         self.root = ""
         self.crawl(args['year'])
-        self.rebuild(self.oldRoot, newRoot)
+        self.rebuild(self.oldRoot, newRoot, args['moveArg'], args['overrideArg'])
         
     def check_valid(self, args):
         if not os.path.exists(os.path.abspath(args['inputDirectory'])):
@@ -41,34 +47,72 @@ class Main_Backup:
         
     def crawl(self, start):
         parent = ""
+        noFilteredFound = True
         #for root, dirs, files in os.walk(os.getcwd()):
         for root, dirs, files in os.walk(self.oldRoot):
+            print root
             if parent == "":
-                parent = createNode(root, 'directory', parent)
+                parent = createNode(root, 'directory', parent, 0)
                 for d in dirs:
-                    parent['children'].append(createNode(os.path.join(root,d),'directory',parent))
-                for f in files:
-                    parent['children'].append(createNode(os.path.join(root,f),'file',parent))
+                    parent['children'].append(createNode(os.path.join(root,d),'directory',parent, 0))
                 self.root = parent
             elif not self.noDirectories(parent):
-                    parent = parent['parent']
-                    while not self.hasChild(parent, root):
-                        parent = parent['parent']
-                    parent = self.getChild(parent, root)
+                    temp = parent['parent']
+                    
+                    while not self.hasChild(temp, root):
+                        if temp == self.root:
+                            break
+                        temp = temp['parent']
+                    if temp == self.root:
+                        continue
+                    parent = self.getChild(temp, root)
+                    if parent['filtered'] == 0:
+                        noFilteredFound = True
+                    else:
+                        noFilteredFound = False 
                     for d in dirs:
-                        parent['children'].append(createNode(os.path.join(root,d),'directory',parent))
+                        child=createNode(os.path.join(root,d),'directory',parent, 0)
+                        if (parent['filtered'] == 1 and str(start) in child['name']):
+                            noFilteredFound = False
+                            child['filtered'] =2
+                            parent['children'].append(child)
+                        elif (parent['filtered'] == 0 and 1000 <= tryInt(child['name']) <= 9999):
+                            noFilteredFound = False
+                            child['filtered'] = 1
+                            parent['children'].append(child)
+                        elif noFilteredFound == True or parent['filtered'] == 2:
+                            if parent['filtered'] == 2:
+                                child['filtered'] = 2
+                            parent['children'].append(child)
                     for f in files:
-                        parent['children'].append(createNode(os.path.join(root,f),'file',parent))
+                        if parent['filtered'] == 2:
+                            parent['children'].append(createNode(os.path.join(root,f),'file',parent, 3))
                 
             else:
-                parent = self.getChild(parent, root)
+                temp = self.getChild(parent, root)
+                if temp == None:
+                    continue
+                parent = temp
                 for d in dirs:
-                    parent['children'].append(createNode(os.path.join(root,d),'directory',parent))
+                    child=createNode(os.path.join(root,d),'directory',parent, 0)
+                    if (parent['filtered'] == 1 and str(start) in child['name']):
+                        noFilteredFound = False
+                        child['filtered'] =2
+                        parent['children'].append(child)
+                    elif (parent['filtered'] == 0 and 1000 <= tryInt(child['name']) <= 9999):
+                        noFilteredFound = False
+                        child['filtered'] = 1
+                        parent['children'].append(child)
+                    elif noFilteredFound == True or parent['filtered'] == 2:
+                        if parent['filtered'] == 2:
+                            child['filtered'] = 2
+                        parent['children'].append(child)
                 for f in files:
-                    parent['children'].append(createNode(os.path.join(root,f),'file',parent))
+                    if parent['filtered'] == 2:
+                        parent['children'].append(createNode(os.path.join(root,f),'file',parent, 3))
                 
 
-    def rebuild(self, oldRoot, newRoot):
+    def rebuild(self, oldRoot, newRoot, move, override):
         queue = [self.root]
         while queue:
             node = queue.pop()
@@ -77,7 +121,7 @@ class Main_Backup:
                 path = newRoot + path
                 if child['type'] == 'directory' and not os.path.exists(path):
                     os.mkdir(path)
-                elif not os.path.exists(path):
+                elif child['type'] == 'file' and (not os.path.exists(path) or override == True):
                     shutil.copy2(child['path'], path)
                 queue.append(child)
 
@@ -88,11 +132,10 @@ class Main_Backup:
         return False
 
     def hasChild(self, parent, path):
-        for child in parent['children']:
-            if child['path'] == path:
-                return True
-        return False
-    
+            for child in parent['children']:
+                if child['path'] == path:
+                    return True
+            return False
     def getChild(self, parent, path):
         for node in parent['children']:
             if node['path'] == path:

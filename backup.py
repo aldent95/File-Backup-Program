@@ -2,6 +2,7 @@ import sys
 import argparse
 import os
 import shutil
+import datetime
 
 def is_valid_path(parser, arg):
     if not os.path.exists(arg):
@@ -22,17 +23,26 @@ def createNode(directory, nodeType, parent):
 
 class Main_Backup:
     def __init__(self, args):
-        oldRoot = os.path.abspath(args['inputDirectory'])
+        self.check_valid(args)
+        self.oldRoot = os.path.abspath(args['inputDirectory'])
         newRoot = os.path.abspath(args['outputDirectory'])
-        os.chdir((os.path.abspath(args['inputDirectory'])))
+        #os.chdir((os.path.abspath(args['inputDirectory'])))
         self.root = ""
-        self.crawl(args['startYear'], args['endYear'])
-        self.rebuild(oldRoot, newRoot)
+        self.crawl(args['year'])
+        self.rebuild(self.oldRoot, newRoot)
         
-
-    def crawl(self, start, end):
+    def check_valid(self, args):
+        if not os.path.exists(os.path.abspath(args['inputDirectory'])):
+            raise ValueError("Invalid input path given")
+        if not type(args['moveArg']) == bool or not type(args['overrideArg']) == bool:
+            raise ValueError('Move arg or Override arg was not given a boolean')
+        if args['year'] > datetime.datetime.now().year:
+            raise ValueError('Provided year is greater than the current year.\n What are you, some kind of time traveler?')
+        
+    def crawl(self, start):
         parent = ""
-        for root, dirs, files in os.walk(os.getcwd()):
+        #for root, dirs, files in os.walk(os.getcwd()):
+        for root, dirs, files in os.walk(self.oldRoot):
             if parent == "":
                 parent = createNode(root, 'directory', parent)
                 for d in dirs:
@@ -67,7 +77,7 @@ class Main_Backup:
                 path = newRoot + path
                 if child['type'] == 'directory' and not os.path.exists(path):
                     os.mkdir(path)
-                else:
+                elif not os.path.exists(path):
                     shutil.copy2(child['path'], path)
                 queue.append(child)
 
@@ -93,8 +103,7 @@ if __name__ == '__main__':
     argparse = argparse.ArgumentParser(description="Backup files from commandline")
     argparse.add_argument('-i', dest='inputDirectory',required=True, help='Input directory',type=lambda x: is_valid_path(argparse,x))
     argparse.add_argument('-b', dest='outputDirectory',required=True, help='Output directory',type=lambda x: is_valid_path(argparse,x))
-    argparse.add_argument('-sy', dest='startYear',required=True, help='Start year for backup',type=int)
-    argparse.add_argument('-ey', dest='endYear',required=True, help='End year for backup (Inclusive)',type=int)
+    argparse.add_argument('-y', dest='year',required=True, help='Year for backup',type=int)
     argparse.add_argument('-m', dest='moveArg',action='store_true', help='Add to enable moving files. Without this argument the program defaults to copying',default=False)
     argparse.add_argument('-o', dest='overrideArg',action='store_true', help='Add to enable overriding of existing files in the output location. Off by default',default=False)
     args = vars(argparse.parse_args())

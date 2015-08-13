@@ -33,14 +33,39 @@ class TestBackupMethods(unittest.TestCase):
             node = bu.createNode('C:\\Users','fail','fail')
 
     def test_Positive_crawl(self):
-        args = {'moveArg':False, 'startYear':2000, 'endYear':2015, 'inputDirectory': 'data',
-                'outputDirectory':'C:\\Users\\Alex\\Desktop', 'overrideArg':False}
+        args = {'moveArg':False, 'year':2000, 'inputDirectory': 'dirtest',
+                'outputDirectory':'dirtest', 'overrideArg':False}
         mainBU = bu.Main_Backup(args)
         root = mainBU.root
         self.assertIsInstance(root, dict)
-        self.assertEqual(root['name'], 'data')
+        self.assertEqual(root['name'], 'dirtest')
         self.assertEqual(root['children'], [])
-        self.assertEqual(root['path'], 'C:\\Users\\Alex\\Documents\\GitHub\\File-Backup-Program\\tests\\data')
+        self.assertEqual(root['path'], 'C:\\Users\\Alex\\Documents\\GitHub\\File-Backup-Program\\tests\\dirtest')
+    #Crawl doesn't have any negative sides to test as all its parameters are checked by __init__
 
-        
-        
+
+    #Positive args tests are done by other test methods, no need to do twice
+    def test_Negative_args(self):
+        args = {'moveArg':False, 'year':2000, 'inputDirectory': 'fail',
+                'outputDirectory':'dirtest', 'overrideArg':False}
+        with self.assertRaises(ValueError):
+            mainBU = bu.Main_Backup(args)
+        args = {'moveArg':1, 'year':2000, 'inputDirectory': 'dirtest',
+                'outputDirectory':'dirtest', 'overrideArg':False}
+        with self.assertRaises(ValueError):
+            mainBU = bu.Main_Backup(args)
+        args = {'moveArg':False, 'year':2000, 'inputDirectory': 'dirtest',
+                'outputDirectory':'dirtest', 'overrideArg':1}
+        with self.assertRaises(ValueError):
+            mainBU = bu.Main_Backup(args)
+        args = {'moveArg':False, 'year':9999, 'inputDirectory': 'dirtest',
+                'outputDirectory':'dirtest', 'overrideArg':False}
+        with self.assertRaises(ValueError):
+            mainBU = bu.Main_Backup(args)
+
+    def test_Positive_rebuild(self):
+        #Very hard to actually test if it rebuilds correctly without manually checking, so we make do with ensureing no
+        #errors appear
+        args = {'moveArg':False, 'year':2000, 'inputDirectory': 'F',
+                'outputDirectory':'testDump', 'overrideArg':False}
+        mainBU = bu.Main_Backup(args)

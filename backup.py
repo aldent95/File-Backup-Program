@@ -53,7 +53,6 @@ class Main_Backup:
         noFilteredFound = True
         #for root, dirs, files in os.walk(os.getcwd()):
         for root, dirs, files in os.walk(self.oldRoot):
-            print root
             if parent == "":
                 parent = createNode(root, 'directory', parent, 0)
                 for d in dirs:

@@ -35,12 +35,15 @@ class Main_Backup:
         #os.chdir((os.path.abspath(args['inputDirectory'])))
         self.root = ""
         self.crawl(args['year'])
-        self.rebuild(self.oldRoot, newRoot, args['moveArg'], args['overrideArg'])
+        if(args['deleteArg']):
+            self.delete()
+        else:
+            self.rebuild(self.oldRoot, newRoot, args['overrideArg'])
         
     def check_valid(self, args):
         if not os.path.exists(os.path.abspath(args['inputDirectory'])):
             raise ValueError("Invalid input path given")
-        if not type(args['moveArg']) == bool or not type(args['overrideArg']) == bool:
+        if not type(args['deleteArg']) == bool or not type(args['overrideArg']) == bool:
             raise ValueError('Move arg or Override arg was not given a boolean')
         if args['year'] > datetime.datetime.now().year:
             raise ValueError('Provided year is greater than the current year.\n What are you, some kind of time traveler?')
@@ -80,12 +83,12 @@ class Main_Backup:
                             noFilteredFound = False
                             child['filtered'] = 1
                             parent['children'].append(child)
-                        elif noFilteredFound == True or parent['filtered'] == 2:
-                            if parent['filtered'] == 2:
-                                child['filtered'] = 2
+                        elif noFilteredFound == True or parent['filtered'] == 2 or parent['filtered']==3:
+                            if parent['filtered'] == 2 or parent['filtered']==3:
+                                child['filtered'] = 3
                             parent['children'].append(child)
                     for f in files:
-                        if parent['filtered'] == 2:
+                        if parent['filtered'] == 2 or parent['filtered'] == 3:
                             parent['children'].append(createNode(os.path.join(root,f),'file',parent, 3))
                 
             else:
@@ -103,16 +106,16 @@ class Main_Backup:
                         noFilteredFound = False
                         child['filtered'] = 1
                         parent['children'].append(child)
-                    elif noFilteredFound == True or parent['filtered'] == 2:
-                        if parent['filtered'] == 2:
-                            child['filtered'] = 2
+                    elif noFilteredFound == True or parent['filtered'] == 2 or parent['filtered']==3:
+                        if parent['filtered'] == 2 or parent['filtered']==3:
+                            child['filtered'] = 3
                         parent['children'].append(child)
                 for f in files:
-                    if parent['filtered'] == 2:
+                    if parent['filtered'] == 2 or parent['filtered'] == 3:
                         parent['children'].append(createNode(os.path.join(root,f),'file',parent, 3))
                 
 
-    def rebuild(self, oldRoot, newRoot, move, override):
+    def rebuild(self, oldRoot, newRoot, override):
         queue = [self.root]
         while queue:
             node = queue.pop()
@@ -124,6 +127,16 @@ class Main_Backup:
                 elif child['type'] == 'file' and (not os.path.exists(path) or override == True):
                     shutil.copy2(child['path'], path)
                 queue.append(child)
+
+    def delete(self):
+        queue = [self.root]
+        while queue:
+            node = queue.pop()
+            if node['filtered'] == 2:
+                shutil.rmtree(node['path'])
+            else:
+                [queue.append(child) for child in node['children']]
+                
 
     def noDirectories(self, parent):
         for child in parent['children']:
@@ -147,7 +160,7 @@ if __name__ == '__main__':
     argparse.add_argument('-i', dest='inputDirectory',required=True, help='Input directory',type=lambda x: is_valid_path(argparse,x))
     argparse.add_argument('-b', dest='outputDirectory',required=True, help='Output directory',type=lambda x: is_valid_path(argparse,x))
     argparse.add_argument('-y', dest='year',required=True, help='Year for backup',type=int)
-    argparse.add_argument('-m', dest='moveArg',action='store_true', help='Add to enable moving files. Without this argument the program defaults to copying',default=False)
+    argparse.add_argument('-d', dest='deleteArg',action='store_true', help='Use to delete files after you have already run the program one time for the copy',default=False)
     argparse.add_argument('-o', dest='overrideArg',action='store_true', help='Add to enable overriding of existing files in the output location. Off by default',default=False)
     args = vars(argparse.parse_args())
     main = Main_Backup(args)

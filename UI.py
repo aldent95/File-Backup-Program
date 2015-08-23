@@ -7,6 +7,7 @@ except ImportError:
 from backup import Main_Backup
 import tkFileDialog
 import ConfigParser
+from SettingsMenu import SettingsMenu
 
 
 class UI(Tk):
@@ -36,6 +37,8 @@ class UI(Tk):
         self.entry = Entry(self);#Setup the entry box
         self.entry.grid(column=1,row=0,sticky='E'+'W');#Place the entry box
 
+        self.setupMenu()
+
 
         self.configureOutput()
         self.setupButtons();
@@ -47,6 +50,13 @@ class UI(Tk):
             self.arguments['overrideArg'] = True
         else:
             self.arguments['overrideArg'] = False
+        self.settingsConfig=config
+    def setupMenu(self):
+        menu = Menu(self)
+        menu.add_command(label="Settings", command=self.displaySettings)
+        self.config(menu=menu)
+    def displaySettings(self):
+        self.settingsMenu.deiconify()
     def configureOutput(self):
         self.output = Text(self);#Setup the text area
         self.output.grid(column=0,row=1,sticky='E'+'W'+'N'+'S',columnspan=5);#Place the text area, spanning 4 columns
@@ -114,9 +124,11 @@ class UI(Tk):
        parent = '';
        Tk.__init__(self,parent);#Parent constructor
        self.arguments = {'inputDirectory':'', 'outputDirectory':'', 'year':'', 'deleteArg':'', 'overrideArg':False}
+       self.settingsConfig = ""
        self.loadSettings()
        self.parent = parent;#Store the parent
        self.initialize();#Initilize the GUI
+       self.settingsMenu = SettingsMenu(self, self.settingsConfig)
        self.mainloop();#Start the main loop
 
 if __name__ == "__main__":

@@ -51,7 +51,6 @@ class Main_Backup:
     def crawl(self, start):
         parent = ""
         noFilteredFound = True
-        #for root, dirs, files in os.walk(os.getcwd()):
         for root, dirs, files in os.walk(self.oldRoot):
             if parent == "":
                 parent = createNode(root, 'directory', parent, 0)
@@ -115,12 +114,15 @@ class Main_Backup:
                 
 
     def rebuild(self, oldRoot, newRoot, override):
+        print(override)
+        print(oldRoot)
+        print(newRoot)
         queue = [self.root]
         while queue:
             node = queue.pop()
             for child in node['children']:
                 path = child['path'].replace(oldRoot, '')
-                path = newRoot + path
+                path = newRoot+'\\' + path
                 if child['type'] == 'directory' and not os.path.exists(path):
                     os.mkdir(path)
                 elif child['type'] == 'file' and (not os.path.exists(path) or override == True):

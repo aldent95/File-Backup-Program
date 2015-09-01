@@ -47,7 +47,13 @@ class Main_Backup:
             raise ValueError('Move arg or Override arg was not given a boolean')
         if args['year'] > datetime.datetime.now().year:
             raise ValueError('Provided year is greater than the current year.\n What are you, some kind of time traveler?')
-        
+    #Status marks
+    #0:Don't copy
+    #1: Client Folder
+    #2: Year Folder
+    #3: File or folder inside year folder
+    #4: Parent folder to copy
+    #5: Client folder to copy
     def crawl(self, start):
         parent = ""
         noFilteredFound = True
@@ -73,9 +79,10 @@ class Main_Backup:
                         noFilteredFound = False 
                     for d in dirs:
                         child=createNode(os.path.join(root,d),'directory',parent, 0)
-                        if (parent['filtered'] == 1 and str(start) in child['name']):
+                        if ((parent['filtered'] == 1 or parent['filtered'] == 5) and str(start) in child['name']):
                             noFilteredFound = False
                             child['filtered'] =2
+                            self.markParent(child)
                             parent['children'].append(child)
                         elif (parent['filtered'] == 0 and 1000 <= tryInt(child['name']) <= 9999):
                             noFilteredFound = False
@@ -96,9 +103,10 @@ class Main_Backup:
                 parent = temp
                 for d in dirs:
                     child=createNode(os.path.join(root,d),'directory',parent, 0)
-                    if (parent['filtered'] == 1 and str(start) in child['name']):
+                    if ((parent['filtered'] == 1 or parent['filtered'] == 5) and str(start) in child['name']):
                         noFilteredFound = False
                         child['filtered'] =2
+                        self.markParent(child)
                         parent['children'].append(child)
                     elif (parent['filtered'] == 0 and 1000 <= tryInt(child['name']) <= 9999):
                         noFilteredFound = False
@@ -114,13 +122,15 @@ class Main_Backup:
                 
 
     def rebuild(self, oldRoot, newRoot, override):
-        print(override)
-        print(oldRoot)
-        print(newRoot)
         queue = [self.root]
         while queue:
             node = queue.pop()
+            print node['name']
+            print node['filtered']
+            print "\n\n"
             for child in node['children']:
+                if child['filtered'] == 0 or child['filtered'] == 1:
+                    continue
                 path = child['path'].replace(oldRoot, '')
                 path = newRoot+'\\' + path
                 if child['type'] == 'directory' and not os.path.exists(path):
@@ -128,7 +138,13 @@ class Main_Backup:
                 elif child['type'] == 'file' and (not os.path.exists(path) or override == True):
                     shutil.copy2(child['path'], path)
                 queue.append(child)
-
+    def markParent(self, node):
+        while(node != ""):
+            if node['filtered'] == 0: 
+                node['filtered'] = 4
+            if node['filtered'] == 1:
+                node['filtered'] = 5
+            node = node['parent']
     def delete(self):
         queue = [self.root]
         while queue:

@@ -25,6 +25,7 @@ class SettingsMenu(Toplevel):
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
         self.rowconfigure(2, weight=1)
+        self.rowconfigure(3, weight=1)
         w = 400  # Sets up the window position on the screen
         h = 150
         sw = self.winfo_screenwidth()
@@ -33,7 +34,8 @@ class SettingsMenu(Toplevel):
         y = (sh - h) / 2
 
         Label(self,padx=2,text='Copy Input Location').grid(row=0,column=0,sticky='E'+'W')
-        Label(self,padx=2,text='Override existing files').grid(row=1,column=0,sticky='E'+'W')
+        Label(self,padx=2,text='Make sure the input location is set to the root directory of the original files').grid(row=1,column=0,sticky='EW')
+        Label(self,padx=2,text='Override existing files').grid(row=2,column=0,sticky='E'+'W')
         
         self.inputEntry = Entry(self)
         self.inputEntry.grid(row=0,column=1,sticky='E'+'W')
@@ -41,7 +43,7 @@ class SettingsMenu(Toplevel):
         self.inputEntry.config(state='readonly')
 
         self.overrideEntry = Entry(self)
-        self.overrideEntry.grid(row=1,column=1,sticky='E'+'W')
+        self.overrideEntry.grid(row=2,column=1,sticky='E'+'W')
         self.overrideEntry.insert(END, self.override)
         self.overrideEntry.config(state='readonly')
 
@@ -49,13 +51,13 @@ class SettingsMenu(Toplevel):
         inputSelect.grid(row=0,column=2,sticky='E'+'W')
 
         overrideChange = Button(self, text='Switch', command=self.changeOverride)
-        overrideChange.grid(row=1,column=2,sticky='E'+'W')
+        overrideChange.grid(row=2,column=2,sticky='E'+'W')
 
         save = Button(self, text = 'Save', command=self.save)
-        save.grid(row=2,column=0,sticky='W')
+        save.grid(row=3,column=0,sticky='W')
 
         cancel = Button(self,text='Cancel', command=self.close)
-        cancel.grid(row=2,column=2,sticky='E')
+        cancel.grid(row=3,column=2,sticky='E')
         
         
         self.update()
@@ -72,7 +74,10 @@ class SettingsMenu(Toplevel):
         self.inputEntry.insert(END, content)
         self.config.set('settings','inputLocation', content)
         self.inputEntry.config(state='readonly')
-
+    def getInput(self):
+        return self.config.get('settings', 'inputLocation')
+    def getOverride(self):
+        return self.config.get('settings', 'override')
     def changeOverride(self, c=""):
         content = ""
         if c == "":

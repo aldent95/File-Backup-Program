@@ -73,39 +73,45 @@ class UI(Tk):
     def selectOutput(self):
         directory = tkFileDialog.askdirectory()
         self.arguments['outputDirectory'] = str(directory)
+    def getSettings(self):
+        self.arguments['inputDirectory'] = self.settingsMenu.getInput()
+        self.arguments['override'] = self.settingsMenu.getOverride()
     def copy(self):
+        self.getSettings()
         try:
             self.arguments['year'] = int(self.entry.get())
         except ValueError:
             self.arguments['year'] = ""
         self.arguments['deleteArg'] = False
         if self.validCheck():
-            Main_Backup(self.arguments)
+            print self.arguments
             self.output.configure(state='normal')
             self.output.delete(1.0,'end')
+            Main_Backup(self.arguments)
             self.output.insert('end', "Copy Complete")
             self.output.configure(state='disabled')
         
     def delete(self):
+        self.getSettings()
         try:
             self.arguments['year'] = int(self.entry.get())
         except ValueError:
             self.arguments['year'] = ""
         self.arguments['deleteArg'] = True
-        if self.validCheck():
-            Main_Backup(self.arguments)
+        if self.validCheck('delete'):
             self.output.configure(state='normal')
             self.output.delete(1.0,'end')
+            Main_Backup(self.arguments)
             self.output.insert('end', "Delete complete")
             self.output.configure(state='disabled')
-    def validCheck(self):
+    def validCheck(self, checkType=''):
         self.output.configure(state='normal')
         self.output.delete(1.0,'end')
         passed = True
         if self.arguments['year'] == "":
             self.output.insert('end', "Please select a year\n")
             passed = False
-        if self.arguments['outputDirectory'] == "":
+        if self.arguments['outputDirectory'] == "" and checkType != 'delete':
             self.output.insert('end', "Please select an output location\n")
             passed = False
         if self.arguments['inputDirectory'] == "":

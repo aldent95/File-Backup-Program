@@ -125,9 +125,6 @@ class Main_Backup:
         queue = [self.root]
         while queue:
             node = queue.pop()
-            print node['name']
-            print node['filtered']
-            print "\n\n"
             for child in node['children']:
                 if child['filtered'] == 0 or child['filtered'] == 1:
                     continue
